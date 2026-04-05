@@ -5,7 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "gtts>=2.5.4",
+    "pandas>=3.0.2",
+    "pydub>=0.25.1",
     "streamlit>=1.56.0",
+    "streamlit-mic-recorder>=0.0.8",
 ]
 
 [tool.ruff]
