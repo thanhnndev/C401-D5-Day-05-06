@@ -11,6 +11,15 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "streamlit>=1.56.0",
     "streamlit-mic-recorder>=0.0.8",
+    "litellm>=1.83.2",
+    "matplotlib>=3.9.0",
+    "numpy>=2.4.4",
+    "openai>=2.30.0",
+    "openrouter>=0.8.1",
+    "pyaudio>=0.2.14",
+    "python-dotenv>=1.0.1",
+    "pywhispercpp>=1.4.1",
+    "scipy>=1.17.1"
 ]
 
 [tool.ruff]
@@ -80,6 +89,14 @@ ignore = [
 fixable = ['ALL']
 unfixable = []
 
+[project.optional-dependencies]
+silero = ["torch>=2.5.0"]
+
 [tool.ruff.lint.pydocstyle]
 # Use Google-style docstrings.
 convention = "google"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.9",
+]
