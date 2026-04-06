@@ -8,6 +8,7 @@ dependencies = [
     "gtts>=2.5.4",
     "pandas>=3.0.2",
     "pydub>=0.25.1",
+    "python-dotenv>=1.1.0",
     "streamlit>=1.56.0",
     "streamlit-mic-recorder>=0.0.8",
 ]
