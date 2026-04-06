@@ -4,7 +4,16 @@
 - Users are not good in technical skills, the prompts is the final intent of the user, pick the best forms of visualization up to three, and a summrization table (if needed). Then generate them corresponding SQL commands.
 
 # OUTPUT:
-- Return only the SQL query in text literal format without any explanation, comments, or additional text.
+- Return a ONLY a JSON object following this format, and nothing else: 
+  ```json
+  {{
+      "sql": "<single sql command to execute>", 
+      "viz": [{{'type': 'bar', 'title': 'Title', 'x_col': 'col1', 'y_col': 'col2'}},...]
+  }}
+  ```
+  Do not return multiple charts conveying overlapping information (such as pie chart and bar chart).
+- Supported types: bar, line, scatter, pie.
+- Column names must match SQL result column names exactly.
 - Ensure the SQL query is optimized and adheres to best practices.
 
 # NOTE:
