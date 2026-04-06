@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "litellm>=1.83.2",
+    "matplotlib>=3.9.0",
     "numpy>=2.4.4",
     "openai>=2.30.0",
     "openrouter>=0.8.1",
