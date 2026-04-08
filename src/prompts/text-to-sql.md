@@ -8,11 +8,19 @@
   ```json
   {{
       "sql": "<single sql command to execute>", 
-      "viz": [{{'type': 'bar', 'title': 'Title', 'x_col': 'col1', 'y_col': 'col2'}},...]
+      "viz": [{{
+            'type': '<chart type>', 
+            'encoding': {{
+                'x': {{ 'field': '<column name>', 'type': '<column type>' }},
+                'y': {{ 'field': '<column name>', 'type': '<column type>' }},
+                'color': {{ 'field': '<column name>', 'type': '<column type>' }},
+            }}
+        }},
+        ...]
   }}
   ```
   Do not return multiple charts conveying overlapping information (such as pie chart and bar chart).
-- Supported types: bar, line, scatter, pie.
+- Supported types: bar, line, area, scatter
 - Column names must match SQL result column names exactly.
 - Ensure the SQL query is optimized and adheres to best practices.
 
