@@ -9,8 +9,7 @@ from .config import VoiceConfig
 
 
 def record_until_keypress(config: VoiceConfig, output_filename: str='output.wav'):
-    """
-    Records audio from the default microphone and saves it to a WAV file.
+    """Records audio from the default microphone and saves it to a WAV file.
     The recording stops when the user presses the Enter key.
     """
     # Audio configuration
