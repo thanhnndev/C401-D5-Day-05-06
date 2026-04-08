@@ -9,8 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-CHART_TYPES = {'bar', 'line', 'scatter', 'pie'}
-REQUIRED_KEYS = {'type', 'title', 'x_col', 'y_col'}
+CHART_TYPES = {'bar', 'line', 'scatter', 'pie', 'area'}
 OUTPUT_DIR = 'output'
 
 
@@ -25,9 +24,12 @@ def extract_viz_spec(raw: str) -> list[dict]:
             continue
         if not isinstance(obj, dict):
             continue
-        if not REQUIRED_KEYS.issubset(obj.keys()):
+        # Support both old format (x_col, y_col) and new format (encoding)
+        has_old = 'x_col' in obj and 'y_col' in obj
+        has_new = 'encoding' in obj
+        if not (has_old or has_new):
             continue
-        if obj['type'] not in CHART_TYPES:
+        if obj.get('type') not in CHART_TYPES:
             continue
         specs.append(obj)
     return specs
@@ -35,12 +37,27 @@ def extract_viz_spec(raw: str) -> list[dict]:
 
 def render_chart(cols: list[str], rows: list[tuple], spec: dict) -> str | None:
     """Render a chart from SQL result data. Returns file path or None."""
-    x_col = spec['x_col']
-    y_col = spec['y_col']
-    chart_type = spec['type']
+    # Support both old format (x_col, y_col, title) and new format (type, encoding)
+    if 'x_col' in spec and 'y_col' in spec:
+        x_col = spec['x_col']
+        y_col = spec['y_col']
+    elif 'encoding' in spec:
+        # Extract from Vega-Lite style encoding
+        encoding = spec['encoding']
+        x_col = encoding.get('x', {}).get('field', '')
+        y_col = encoding.get('y', {}).get('field', '')
+    else:
+        print(f'Warning: spec missing required columns: {spec}')
+        return None
 
-    if x_col not in cols or y_col not in cols:
-        print(f'Warning: columns not found for chart "{spec["title"]}"')
+    chart_type = spec['type']
+    title = spec.get('title', f'{x_col} vs {y_col}')
+
+    if x_col not in cols:
+        print(f'Warning: x_col "{x_col}" not found in {cols}')
+        return None
+    if y_col not in cols:
+        print(f'Warning: y_col "{y_col}" not found in {cols}')
         return None
 
     x_idx = cols.index(x_col)
@@ -55,7 +72,7 @@ def render_chart(cols: list[str], rows: list[tuple], spec: dict) -> str | None:
     y_data = [_safe_float(row[y_idx]) for row in rows]
 
     if not x_data or not rows:
-        print(f'Warning: no data for chart "{spec["title"]}"')
+        print(f'Warning: no data for chart "{title}"')
         return None
 
     fig, ax = plt.subplots()
@@ -68,9 +85,11 @@ def render_chart(cols: list[str], rows: list[tuple], spec: dict) -> str | None:
         ax.scatter(x_data, y_data)
     elif chart_type == 'pie':
         ax.pie(y_data, labels=x_data, autopct='%1.1f%%')
+    elif chart_type == 'area':
+        ax.fill_between(x_data, y_data, alpha=0.5)
 
     if chart_type != 'pie':
-        ax.set_title(spec['title'])
+        ax.set_title(title)
         ax.set_xlabel(x_col)
         ax.set_ylabel(y_col)
         ax.tick_params(axis='x', rotation=45)

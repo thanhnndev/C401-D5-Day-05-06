@@ -25,7 +25,6 @@ PROMPT_FILE = Path('src/prompts/text-to-sql.md')
 SYSTEM_PROMPT = PROMPT_FILE.read_text().format(SCHEMA)
 
 
-
 def get_input(mode: str, client: OpenAI) -> str:
     if mode == 'text':
         return input('User > ')
@@ -43,7 +42,7 @@ def get_input(mode: str, client: OpenAI) -> str:
 
 def to_sql(client: OpenAI, messages: list[dict]) -> str:
     stream = client.chat.completions.create(
-        model='qwen/qwen3.6-plus:free',
+        model=os.getenv('DEFAULT_MODEL'),
         messages=messages,
         stream=True,
         extra_body={'reasoning': {'enabled': False}},
@@ -85,7 +84,8 @@ def print_table(cols: list[str], rows: list[tuple]) -> None:
 
 def main() -> None:
     client = OpenAI(
-        base_url='https://openrouter.ai/api/v1', api_key=os.getenv('OPENROUTER_API_KEY'),
+        base_url=os.getenv('OLLAMA_BASE_URL'),
+        api_key=os.getenv('OLLAMA_API_KEY'),
     )
     history = [{'role': 'system', 'content': SYSTEM_PROMPT}]
     mode = input('Mode [text/voice/file] > ').strip().lower() or 'text'
@@ -98,10 +98,24 @@ def main() -> None:
             raw_response = to_sql(client, history)
             history.append({'role': 'assistant', 'content': raw_response})
 
-            norm = re.sub(r'```.*?\n|```', '', raw_response).strip()
-            obj = json.loads(norm)
-            assert isinstance(obj['sql'], str)
-            assert isinstance(obj['viz'], list)
+            # Robust JSON extraction
+            try:
+                start_idx = raw_response.find('{')
+                end_idx = raw_response.rfind('}')
+                if start_idx != -1 and end_idx != -1:
+                    json_str = raw_response[start_idx : end_idx + 1]
+                    obj = json.loads(json_str)
+                else:
+                    obj = json.loads(raw_response)
+            except (json.JSONDecodeError, ValueError):
+                # Fallback: strip backticks and try again
+                norm = re.sub(r'```.*?\n|```', '', raw_response).strip()
+                obj = json.loads(norm)
+
+            if not isinstance(obj.get('sql'), str) or not isinstance(obj.get('viz'), list):
+                print('Error: LLM response missing sql or viz fields.')
+                continue
+
             cols, rows = run(obj['sql'])
 
             if not cols or not rows:
