@@ -1,4 +1,4 @@
-"""Registry, read-only guard, và (tùy chọn) tích hợp PostgreSQL thật khi có env."""
+"""Database tools: registry, read-only guard, optional live PostgreSQL when env is set."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from tools.db import (
+from tools.postgres_readonly import (
     DB_ID_ACADEMIC,
     DB_ID_CTSV,
     execute_sql,
@@ -23,8 +23,8 @@ def test_registry_lists_two_databases() -> None:
     text = get_db_list.invoke({})
     assert DB_ID_ACADEMIC in text
     assert DB_ID_CTSV in text
-    assert 'Đào Tạo' in text or 'academic' in text.lower() or 'DATABASE_URL' in text
-    assert 'CTSV' in text
+    assert 'academic' in text.lower() or 'DATABASE_URL' in text
+    assert 'CTSV' in text or 'ctsv' in text.lower()
 
 
 @pytest.mark.skipif(not _HAS_ACADEMIC, reason='DATABASE_URL not set — skip live academic DB')

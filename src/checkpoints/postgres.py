@@ -30,6 +30,6 @@ def postgres_checkpointer() -> Iterator[PostgresSaver]:
     """Context-managed PostgresSaver. Caller should call ``setup()`` once before first checkpoint use."""
     url = get_database_url()
     if not url:
-        raise ValueError("DATABASE_URL is not set")
+        raise ValueError('DATABASE_URL is not set')
     with PostgresSaver.from_conn_string(url) as saver:
         yield saver

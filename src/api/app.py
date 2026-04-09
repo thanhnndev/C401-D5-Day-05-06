@@ -1,13 +1,13 @@
-"""FastAPI application: LangGraph chat, thread history, OpenAPI for frontend.
+"""FastAPI app: LangGraph chat, thread history, OpenAPI for the frontend.
 
-Run from repo root (không cần ``PYTHONPATH``)::
+Run from the repo root (``server.py`` prepends ``src/`` to ``sys.path``)::
 
     uvicorn server:app --reload --host 0.0.0.0 --port 8000
 
-Hoặc: ``PYTHONPATH=src uvicorn api.app:app ...`` — xem ``server.py`` ở gốc repo.
+Or: ``PYTHONPATH=src uvicorn api.app:app ...``
 
-- ``DATABASE_URL`` → ``PostgresSaver``; else ``MemorySaver``.
-- See ``docs/langgraph-http-api.md`` and ``GET /meta`` for contract (``graph_mode``, ``state``).
+- ``DATABASE_URL`` → ``PostgresSaver`` at startup; otherwise ``MemorySaver``.
+- Contract: ``docs/langgraph-http-api.md`` and ``GET /meta`` (``graph_mode``, ``state``).
 """
 
 from __future__ import annotations
@@ -16,13 +16,7 @@ import sys
 import uuid
 from collections.abc import Iterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Any
-
-# Repo root so `graph` (project root) resolves when only `src` is on PYTHONPATH.
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
 
 import psycopg  # noqa: E402
 

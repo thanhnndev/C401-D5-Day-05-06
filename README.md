@@ -287,6 +287,21 @@ hỏi triệu chứng cơ bản và gợi ý chuyên khoa phù hợp.
 
 ---
 
+## Bố cục repo (tóm tắt)
+
+| Path | Nội dung |
+|------|----------|
+| `src/api/` | FastAPI (`app.py`, schemas, state JSON) |
+| `src/graph/` | `build_app`: ReAct agent hoặc stub; prompt `prompts/react_agent_system.txt` |
+| `src/tools/` | LangChain tools — **`postgres_readonly.py`** (2 DB), email, export |
+| `src/llm/` | Gemini `ChatGoogleGenerativeAI` factory |
+| `src/checkpoints/` | Postgres probe + `PostgresSaver` context manager |
+| `scripts/demo.py` | CLI demo (checkpoint + một lượt graph; agent mode = 1 lần gọi Gemini) |
+| `database/` | SQL DDL + mock data (tuỳ nhóm) — **không** trùng với code Python |
+| `server.py` | Entry ASGI: chỉ thêm `src/` rồi `import api.app:app` |
+
+---
+
 ## StudentOps — luồng hoạt động (prototype trong repo)
 
 ```text
@@ -299,7 +314,7 @@ hỏi triệu chứng cơ bản và gợi ý chuyên khoa phù hợp.
                     │         │                                                │
                     │         ├── GOOGLE_API_KEY có  → ReAct agent (Gemini)     │
                     │         │                    + tools: DB PostgreSQL (2),│
-                    │         │                      email, export (`graph.py`)│
+                    │         │                      email, export (`src/graph/`)│
                     │         │                                                │
                     │         └── GOOGLE_API_KEY không → graph stub (demo `text`)│
                     │                    │                                     │
@@ -309,7 +324,7 @@ hỏi triệu chứng cơ bản và gợi ý chuyên khoa phù hợp.
 ```
 
 - **Checkpoint:** nếu có `DATABASE_URL` và kết nối OK lúc startup, LangGraph dùng **Postgres** để lưu thread; không thì **bộ nhớ trong process** (mất khi restart).
-- **Hai DB nghiệp vụ:** `vinuni_academic` / `vinuni_ctsv` qua `src/tools/db.py` (ủy quyền `src/tools/schemaDB_Excuted_.py`; key kỹ thuật `academic` / `ctsv_booking`). Cùng hai URI `DATABASE_URL` / `CTSV_DATABASE_URL` như probe `/health` và checkpoint (có thể trùng server, khác database).
+- **Hai DB nghiệp vụ:** `vinuni_academic` / `vinuni_ctsv` trong `src/tools/postgres_readonly.py` (key kỹ thuật `academic` / `ctsv_booking`). Cùng hai URI `DATABASE_URL` / `CTSV_DATABASE_URL` như probe `/health` và checkpoint (có thể trùng server, khác database).
 - **Tài liệu API chi tiết:** [`docs/langgraph-http-api.md`](docs/langgraph-http-api.md) và `GET /docs` khi server chạy.
 
 ---
@@ -356,16 +371,19 @@ export PYTHONPATH=src
 
 Không set sẽ lỗi `ModuleNotFoundError: config` / `api`. Thư mục `tests/` tự thêm `src` qua `conftest.py`.
 
-### Chạy demo CLI (`main.py`)
+### Chạy demo CLI (`scripts/demo.py`)
 
 ```bash
-export PYTHONPATH=src   # nếu chưa set trong shell
-uv run python main.py
+uv run python scripts/demo.py
 ```
 
-- Không `DATABASE_URL`: log in-memory checkpoint; stub → state kiểu `{'text': 'ab'}` (chuỗi rỗng qua hai node demo).
-- Có `DATABASE_URL` + Postgres: `PostgresSaver` + `setup()`; cùng kết quả state tùy stub/agent.
-- Có `GOOGLE_API_KEY`: thêm đoạn gọi Gemini trực tiếp (smoke); graph một lượt dùng `HumanMessage("ping")` nếu agent.
+(`scripts/demo.py` tự thêm `src/` vào `sys.path`; không cần `PYTHONPATH`.)
+
+- Không `DATABASE_URL`: in-memory checkpoint; stub → state kiểu `{'text': 'ab'}`.
+- Có `DATABASE_URL` + Postgres: `PostgresSaver` + `setup()`.
+- Có `GOOGLE_API_KEY` + **agent**: một lượt `invoke` với `HumanMessage("ping")` (một request Gemini). Lỗi **429 / quota** được in gợi ý thay vì traceback dài.
+- Có `GOOGLE_API_KEY` + **stub** (không agent): thêm một smoke `Gemini` ngắn (để test API khi graph không gọi LLM).
+- Free tier Gemini có giới hạn request/ngày — xem [rate limits](https://ai.google.dev/gemini-api/docs/rate-limits).
 
 ### Chạy HTTP API (cho frontend)
 
@@ -373,7 +391,7 @@ uv run python main.py
 uv run uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-File **`server.py`** ở gốc repo tự thêm `src/` (và gốc repo) vào `sys.path` trước khi import `api` — **không cần** `export PYTHONPATH=src` khi dùng lệnh này.
+File **`server.py`** ở gốc repo chỉ thêm `src/` vào `sys.path` rồi import `api` — **không cần** `export PYTHONPATH=src` khi dùng lệnh này.
 
 Nếu vẫn muốn gọi trực tiếp module package: `PYTHONPATH=src uv run uvicorn api.app:app ...`
 

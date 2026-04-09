@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -11,22 +10,17 @@ from langgraph.graph import START, StateGraph
 from langgraph.prebuilt import create_react_agent
 from typing_extensions import TypedDict
 
-# Repo root = parent of this file; `src` on path for `tools`, `telemetry`, `prompts`.
-_REPO_ROOT = Path(__file__).resolve().parent
-_SRC = _REPO_ROOT / 'src'
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
+from config import get_gemini_model, get_google_api_key
+from llm.gemini import get_chat_model
+from telemetry.logger import logger
+from telemetry.metrics import llm_performance_tracker
+from tools.postgres_readonly import DB_AGENT_TOOLS
+from tools.email import EMAIL_TOOLS
+from tools.email_draft import email_draft_tool
+from tools.export_data_tool import export_data
 
-from config import get_gemini_model, get_google_api_key  # noqa: E402
-from gemini import get_chat_model  # noqa: E402
-from telemetry.logger import logger  # noqa: E402
-from telemetry.metrics import llm_performance_tracker  # noqa: E402
-from tools.db import DB_AGENT_TOOLS  # noqa: E402
-from tools.email import EMAIL_TOOLS  # noqa: E402
-from tools.email_draft import email_draft_tool  # noqa: E402
-from tools.export_data_tool import export_data  # noqa: E402
-
-_PROMPT_PATH = _SRC / 'prompts' / 'studentops_react_system.txt'
+_PACKAGE = Path(__file__).resolve().parents[1]
+_PROMPT_PATH = _PACKAGE / 'prompts' / 'react_agent_system.txt'
 
 AGENT_TOOLS = [
     *EMAIL_TOOLS,
@@ -133,7 +127,7 @@ def _build_react_agent(checkpointer: Any = None) -> Any:
         prompt=prompt,
         checkpointer=checkpointer,
         post_model_hook=_telemetry_post_model,
-        name='studentops_react',
+        name='vinuni_ops_react',
     )
 
 
@@ -166,3 +160,10 @@ def build_app(checkpointer: Any = None) -> Any:
     if graph_uses_messages():
         return _build_react_agent(checkpointer)
     return _build_stub_graph(checkpointer)
+
+
+def get_compiled_graph_for_cli() -> Any:
+    """In-memory graph for LangGraph CLI / ``langgraph.json`` (no Postgres)."""
+    from langgraph.checkpoint.memory import MemorySaver
+
+    return build_app(MemorySaver())

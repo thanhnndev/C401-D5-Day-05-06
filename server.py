@@ -1,8 +1,10 @@
-"""ASGI entrypoint: đặt `src/` và gốc repo lên `sys.path` trước khi import `api`.
+"""ASGI entry: prepend ``src/`` to ``sys.path``, then expose FastAPI ``app``.
 
-Chạy (không cần `export PYTHONPATH=src`)::
+Run::
 
     uvicorn server:app --reload --host 0.0.0.0 --port 8000
+
+No ``PYTHONPATH`` required (``src`` is added here).
 """
 
 from __future__ import annotations
@@ -10,12 +12,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parent
-_SRC = _ROOT / 'src'
-for _p in (_SRC, _ROOT):
-    _s = str(_p)
-    if _s not in sys.path:
-        sys.path.insert(0, _s)
+_SRC = Path(__file__).resolve().parent / 'src'
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 from api.app import app
 

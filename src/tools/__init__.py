@@ -1,1 +1,1 @@
-"""Agent-facing tools (database stubs, email, …)."""
+"""LangChain tools: PostgreSQL read-only (`postgres_readonly`), email, export."""
