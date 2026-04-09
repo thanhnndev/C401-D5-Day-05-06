@@ -43,4 +43,4 @@ Vai trò chính: thiết kế và triển khai tool `export_data` (`src/tools/ex
 
 7. AI giúp gì / AI sai (mislead) ở đâu?  
 - Giúp: đề xuất test cases, template code nhanh, gợi ý format/encoding và các cải tiến khả thi.  
-- Sai/mislead: đôi khi đề xuất quá phức tạp (streaming + chunking) vượt scope hackathon; một số snippet cần điều chỉnh tương thích với phiên bản `pandas`/`openpyxl` trong môi trường.
+- Sai (mislead): đôi khi đề xuất quá phức tạp (streaming + chunking) vượt scope hackathon; một số snippet cần điều chỉnh tương thích với phiên bản `pandas`/`openpyxl` trong môi trường.
