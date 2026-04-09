@@ -1,7 +1,5 @@
 # Tài liệu HTTP API — LangGraph (chat & lịch sử phiên)
 
-Tài liệu này mô tả giao diện HTTP mà frontend (hoặc bất kỳ client nào) dùng để gọi backend FastAPI bọc LangGraph. Không kèm ví dụ code phía client.
-
 ---
 
 ## Mục đích
@@ -42,9 +40,22 @@ Tài liệu này mô tả giao diện HTTP mà frontend (hoặc bất kỳ clien
 | Phương thức & đường dẫn | `GET /health` |
 | Body | Không |
 
-**Phản hồi thành công (HTTP 200):** JSON object với khóa `status`, giá trị chuỗi `"ok"` khi service sẵn sàng nhận request (không đảm bảo database ngoài phạm vi graph).
+**Phản hồi thành công (HTTP 200):** JSON object gồm:
 
-**Mục đích:** probe liveness (load balancer, k8s, hoặc màn hình status).
+| Trường | Kiểu | Mô tả |
+|--------|------|--------|
+| `status` | string | Luôn là `"ok"` khi process trả lời được (liveness của API). |
+| `databases` | object | Hai khóa con: `academic` và `ctsv` — mỗi khóa mô tả **một** instance PostgreSQL theo biến môi trường tương ứng. |
+
+**Một instance trong `databases` (ví dụ `databases.academic`):**
+
+| Trường | Kiểu | Mô tả |
+|--------|------|--------|
+| `configured` | boolean | `true` nếu biến môi trường URL cho instance đó được set (không rỗng). `academic` ↔ `DATABASE_URL`; `ctsv` ↔ `CTSV_DATABASE_URL`. |
+| `reachable` | boolean hoặc `null` | `null` khi `configured` là `false` (không probe). `true` nếu thực hiện được truy vấn kiểm tra đơn giản (`SELECT 1`). `false` nếu đã cấu hình nhưng kết nối thất bại. |
+| `error` | string hoặc `null` | Chỉ có ý nghĩa khi `configured` là `true` và `reachable` là `false`: thông báo lỗi rút gọn từ driver (tối đa ~500 ký tự). |
+
+**Mục đích:** vừa probe liveness của API, vừa cho frontend/ops biết trạng thái hai DB logic (học vụ và CTSV) **tại thời điểm gọi** — không thay cho giám sát DB chuyên dụng.
 
 ---
 

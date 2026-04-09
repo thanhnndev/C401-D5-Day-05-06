@@ -12,10 +12,11 @@ from fastapi.testclient import TestClient
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     """Fresh app using in-memory checkpointer (no DATABASE_URL).
 
-    ``setenv('DATABASE_URL','')`` prevents ``load_dotenv`` from repopulating
-    a real URL after ``delenv`` (dotenv does not override existing keys).
+    ``setenv(...,'')`` prevents ``load_dotenv`` from repopulating real URLs
+    (dotenv does not override existing keys).
     """
     monkeypatch.setenv('DATABASE_URL', '')
+    monkeypatch.setenv('CTSV_DATABASE_URL', '')
     sys.modules.pop('api.app', None)
     sys.modules.pop('config', None)
     from api.app import app
@@ -27,7 +28,13 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 def test_health(client: TestClient) -> None:
     r = client.get('/health')
     assert r.status_code == 200
-    assert r.json() == {'status': 'ok'}
+    data = r.json()
+    assert data['status'] == 'ok'
+    dbs = data['databases']
+    assert dbs['academic']['configured'] is False
+    assert dbs['academic']['reachable'] is None
+    assert dbs['ctsv']['configured'] is False
+    assert dbs['ctsv']['reachable'] is None
 
 
 def test_chat_generates_thread_id(client: TestClient) -> None:

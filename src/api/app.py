@@ -21,7 +21,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from config import get_database_url  # noqa: E402
+import psycopg  # noqa: E402
+
+from config import get_ctsv_database_url, get_database_url  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
 from graph import build_app  # noqa: E402
 from langgraph.checkpoint.memory import MemorySaver  # noqa: E402
@@ -32,9 +34,30 @@ from langgraph.types import StateSnapshot  # noqa: E402
 from api.schemas import (  # noqa: E402
     ChatRequest,
     ChatResponse,
+    DatabasesHealth,
+    DbInstanceStatus,
+    HealthResponse,
     HistoryCheckpointItem,
     HistoryResponse,
 )
+
+
+def _probe_postgres(url: str | None) -> DbInstanceStatus:
+    """Return configuration and reachability for one connection string."""
+    if not url:
+        return DbInstanceStatus(configured=False, reachable=None)
+    try:
+        with psycopg.connect(url, connect_timeout=5) as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT 1')
+    except Exception as e:
+        err = str(e).strip()
+        return DbInstanceStatus(
+            configured=True,
+            reachable=False,
+            error=err[:500] if err else 'connection failed',
+        )
+    return DbInstanceStatus(configured=True, reachable=True)
 
 
 def _snapshot_to_item(snap: StateSnapshot) -> HistoryCheckpointItem:
@@ -90,10 +113,16 @@ def _get_graph() -> CompiledStateGraph:
     return compiled
 
 
-@app.get('/health')
-def health() -> dict[str, str]:
-    """Liveness probe."""
-    return {'status': 'ok'}
+@app.get('/health', response_model=HealthResponse)
+def health() -> HealthResponse:
+    """Liveness probe and status of configured PostgreSQL instances."""
+    return HealthResponse(
+        status='ok',
+        databases=DatabasesHealth(
+            academic=_probe_postgres(get_database_url()),
+            ctsv=_probe_postgres(get_ctsv_database_url()),
+        ),
+    )
 
 
 @app.post('/chat', response_model=ChatResponse)
