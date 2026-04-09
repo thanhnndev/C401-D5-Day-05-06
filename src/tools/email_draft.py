@@ -5,50 +5,53 @@ from langchain_core.tools import tool
 def email_draft_tool(
     students: List[Dict[str, Any]], 
     email_template: str, 
-    subject_template: str = 'Thông báo từ VinUni - {{mssv}}'
+    subject_template: str = 'Notification from VinUni - {{mssv}}'
 ) -> List[Dict[str, str]]:
     """
-    Soạn thảo email cá nhân hóa cho danh sách sinh viên với nội dung linh hoạt (Học phí, Kết quả học tập, Chương trình học).
+    Draft personalized emails for a list of students with flexible content (Tuition, Academic Results, Program info).
 
-    Hỗ trợ các merge fields tương ứng với dữ liệu database:
-    - Cơ bản: {{full_name}}, {{mssv}}, {{email}}, {{major}}, {{cohort}}
-    - Học phí: {{amount_due_vnd}}, {{amount_paid_vnd}}, {{outstanding_tuition_vnd}}, {{due_date}}
-    - Kết quả học tập: {{term_gpa}}, {{credits_registered}}, {{credits_earned}}, {{term_code}}
+    Supports merge fields corresponding to database fields:
+    - Basic: {{full_name}}, {{mssv}}, {{email}}, {{major}}, {{cohort}}
+    - Tuition: {{amount_due_vnd}}, {{amount_paid_vnd}}, {{outstanding_tuition_vnd}}, {{due_date}}
+    - Academic: {{term_gpa}}, {{credits_registered}}, {{credits_earned}}, {{term_code}}
 
     Args:
-        students: Danh sách chứa thông tin sinh viên và dữ liệu liên quan (GPA, Học phí...).
-        email_template: Nội dung email mẫu có chứa các placeholder {{field_name}}.
-        subject_template: Tiêu đề email mẫu.
+        students: High-level list containing student info and related data (GPA, Tuition...).
+        email_template: Email body template containing {{field_name}} placeholders.
+        subject_template: Email subject template.
 
     Returns:
-        List[Dict]: Danh sách các bản nháp email hoàn chỉnh.
+        List[Dict]: A list of complete personalized email drafts.
     """
     drafts = []
     for student in students:
-        # Xử lý nội dung (Body) và tiêu đề (Subject)
+        # Initialize body and subject from templates
         body = email_template
         subject = subject_template
 
-        # Tổng hợp tất cả các key
+        # Clone student data to avoid side effects
         data = student.copy()
         
-        # Tính toán nợ học phí nếu có đủ thông tin
+        # Calculate outstanding tuition if info is available
         if 'amount_due_vnd' in data and 'amount_paid_vnd' in data:
             data['outstanding_tuition_vnd'] = data['amount_due_vnd'] - data['amount_paid_vnd']
 
         for key, value in data.items():
             placeholder = f'{{{{{key}}}}}'
             
-            # Format dữ liệu hiển thị
+            # Format display data based on field type/name
             display_value = value
             if value is None:
                 display_value = 'N/A'
             elif isinstance(value, (int, float)):
-                if 'amount' in key.lower() or 'tuition' in key.lower() or 'vnd' in key.lower():
+                if any(k in key.lower() for k in ['amount', 'tuition', 'vnd']):
+                    # Currency format: 1,000,000
                     display_value = f'{int(value):,}'
                 elif 'gpa' in key.lower():
+                    # GPA format: 3.80
                     display_value = f'{value:.2f}'
             
+            # Replace placeholders in both body and subject
             body = body.replace(placeholder, str(display_value))
             subject = subject.replace(placeholder, str(display_value))
         
