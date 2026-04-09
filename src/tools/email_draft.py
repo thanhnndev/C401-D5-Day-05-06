@@ -1,5 +1,14 @@
+from pathlib import Path
 from typing import Any, Dict, List
 from langchain_core.tools import tool
+
+def load_template(filename: str) -> str:
+    """Load an email template from src/templates/."""
+    # Find the root project directory (assuming src/tools is where this file is)
+    template_path = Path(__file__).parent.parent / "templates" / filename
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template not found at {template_path}")
+    return template_path.read_text(encoding="utf-8")
 
 @tool
 def email_draft_tool(
