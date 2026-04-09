@@ -10,8 +10,8 @@
 - **Phân chia Tooling:** Thiết kế interface và logic cho các tool còn lại (UC2 - Email drafting) để các thành viên khác trong team triển khai đồng bộ.
 
 ## 3. SPEC mạnh/yếu
-- **Mạnh nhất: 4 Paths (UX) & Guardrails.** Bản SPEC đã lường trước rất kỹ các lỗi của AI (NL-to-SQL sai, hallucinate email) và đưa ra cơ chế phòng thủ đa lớp: Hiển thị query mô tả cho user xác nhận + HIL (Human-in-the-loop) bắt buộc trước khi gửi email.
-- **Yếu nhất: ROI (Kịch bản tài chính).** Các con số giả định về thời gian tiết kiệm (3-4h/ngày) còn mang tính lý tưởng. Cần bổ sung thêm phần tính toán chi phí token thực tế khi Agent phải quét schema liên tục đối với các DB có hàng trăm bảng.
+- **Mạnh nhất: 4 Paths (UX) & ROI Analysis.** Bản SPEC FINAL đã cực kỳ hoàn thiện ở phần thiết kế trải nghiệm người dùng với đầy đủ 4 luồng (Happy, Low-confidence, Failure, Recovery). Đặc biệt, phần ROI không còn cảm tính mà đã có các kịch bản (Best/Base/Worst) và "Kill criteria" rất rõ ràng để quản trị rủi ro dự án.
+- **Yếu nhất: Phân mảng dữ liệu (Multi-DB handling).** Dù spec đã đề cập đến việc tách biệt DB Academic và DB CTSV, nhưng cơ chế để Agent tự động "join" dữ liệu giữa hai nguồn này (như lấy thông tin đặt phòng ghép với GPA để phân tích) vẫn còn ở mức roadmap, chưa được mô tả kỹ về mặt kỹ thuật trong V1.
 
 ## 4. Đóng góp khác
 - **Kiểm thử Tool:** Viết script `test_tools_manual.py` để team có thể tự kiểm tra kết nối Database và độ nhạy của Guardrails trước khi tích hợp vào Agent chính.
