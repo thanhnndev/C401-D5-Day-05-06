@@ -7,6 +7,8 @@ import ssl
 from email.message import EmailMessage
 from typing import Any
 
+from langchain_core.tools import tool
+
 from config import (
     TlsMode,
     get_smtp_from,
@@ -16,7 +18,6 @@ from config import (
     get_smtp_tls_mode,
     get_smtp_user,
 )
-from langchain_core.tools import tool
 
 
 def _smtp_settings() -> dict[str, str | int | TlsMode]:
@@ -79,7 +80,7 @@ def send_email_smtp(
     # Detect if the body is HTML
     if body.strip().lower().startswith('<!doctype html') or '<html' in body.lower():
         # Set a plain text fallback
-        msg.set_content("Please use an HTML-compatible email client to view this message.")
+        msg.set_content('Please use an HTML-compatible email client to view this message.')
         msg.add_alternative(body, subtype='html')
     else:
         msg.set_content(body)
