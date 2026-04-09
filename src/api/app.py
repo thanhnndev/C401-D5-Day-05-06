@@ -23,9 +23,11 @@ if str(_REPO_ROOT) not in sys.path:
 
 import psycopg  # noqa: E402
 
+from langchain_core.messages import HumanMessage  # noqa: E402
+
 from config import get_ctsv_database_url, get_database_url  # noqa: E402
 from fastapi import FastAPI, HTTPException  # noqa: E402
-from graph import build_app  # noqa: E402
+from graph import build_app, graph_uses_messages  # noqa: E402
 from langgraph.checkpoint.memory import MemorySaver  # noqa: E402
 from langgraph.checkpoint.postgres import PostgresSaver  # noqa: E402
 from langgraph.graph.state import CompiledStateGraph  # noqa: E402
@@ -131,7 +133,14 @@ def chat(body: ChatRequest) -> ChatResponse:
     thread_id = body.thread_id or str(uuid.uuid4())
     cfg = {'configurable': {'thread_id': thread_id}}
     try:
-        out = _get_graph().invoke({'text': body.message}, cfg)
+        g = _get_graph()
+        if graph_uses_messages():
+            out = g.invoke(
+                {'messages': [HumanMessage(content=body.message)]},
+                cfg,
+            )
+        else:
+            out = g.invoke({'text': body.message}, cfg)
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
     return ChatResponse(thread_id=thread_id, state=dict(out))

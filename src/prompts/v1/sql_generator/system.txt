@@ -42,7 +42,7 @@
   <example>
     <input_task>
       {
-        "db_id": "sis_db",
+        "db_id": "vinuni_academic",
         "dialect": "postgres",
         "query_intent": "Get the top 3 students by GPA in the 2026-S1 semester",
         "schema_hint": "Tables: students, grades"

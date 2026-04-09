@@ -10,7 +10,11 @@ from pydantic import BaseModel, Field
 class ChatRequest(BaseModel):
     """User message for one graph turn."""
 
-    message: str = Field(..., min_length=1, description='User text passed to graph state `text`.')
+    message: str = Field(
+        ...,
+        min_length=1,
+        description='User text: mapped to `text` (stub graph) or initial HumanMessage (ReAct agent).',
+    )
     thread_id: str | None = Field(
         None,
         description='Conversation thread; if omitted, server generates a UUID.',

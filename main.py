@@ -2,8 +2,10 @@
 
 import config  # noqa: F401 — load_dotenv side effect
 
+from langchain_core.messages import HumanMessage
+
 from config import get_database_url, get_google_api_key
-from graph import build_app
+from graph import build_app, graph_uses_messages
 from postgres_checkpointer import check_connection, postgres_checkpointer
 
 
@@ -20,14 +22,21 @@ def main() -> None:
         with postgres_checkpointer() as cp:
             cp.setup()
             app = build_app(checkpointer=cp)
-            out = app.invoke(
-                {"text": ""},
-                config={"configurable": {"thread_id": "demo-thread-1"}},
-            )
+            cfg = {"configurable": {"thread_id": "demo-thread-1"}}
+            if graph_uses_messages():
+                out = app.invoke(
+                    {"messages": [HumanMessage(content="ping")]},
+                    config=cfg,
+                )
+            else:
+                out = app.invoke({"text": ""}, config=cfg)
             print("Graph result (with PostgresSaver):", out)
     else:
         app = build_app()
-        out = app.invoke({"text": ""})
+        if graph_uses_messages():
+            out = app.invoke({"messages": [HumanMessage(content="ping")]})
+        else:
+            out = app.invoke({"text": ""})
         print("Graph result (no checkpointer):", out)
 
     if get_google_api_key():

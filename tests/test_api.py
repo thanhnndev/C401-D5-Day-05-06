@@ -17,6 +17,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     """
     monkeypatch.setenv('DATABASE_URL', '')
     monkeypatch.setenv('CTSV_DATABASE_URL', '')
+    monkeypatch.setenv('GOOGLE_API_KEY', '')
     sys.modules.pop('api.app', None)
     sys.modules.pop('config', None)
     from api.app import app
