@@ -298,7 +298,7 @@ hỏi triệu chứng cơ bản và gợi ý chuyên khoa phù hợp.
                     │  `build_app(checkpointer)`  ←  PostgresSaver hoặc MemorySaver
                     │         │                                                │
                     │         ├── GOOGLE_API_KEY có  → ReAct agent (Gemini)     │
-                    │         │                    + tools: DB mock (2 DB),     │
+                    │         │                    + tools: DB PostgreSQL (2),│
                     │         │                      email, export (`graph.py`)│
                     │         │                                                │
                     │         └── GOOGLE_API_KEY không → graph stub (demo `text`)│
@@ -309,7 +309,7 @@ hỏi triệu chứng cơ bản và gợi ý chuyên khoa phù hợp.
 ```
 
 - **Checkpoint:** nếu có `DATABASE_URL` và kết nối OK lúc startup, LangGraph dùng **Postgres** để lưu thread; không thì **bộ nhớ trong process** (mất khi restart).
-- **Hai DB nghiệp vụ (mock trong agent):** `vinuni_academic` (Đào Tạo) và `vinuni_ctsv` (CTSV) — xem `src/tools/db.py`. Đây khác với hai URI `DATABASE_URL` / `CTSV_DATABASE_URL` (probe trong `/health`; có thể dùng chung DB cho checkpoint).
+- **Hai DB nghiệp vụ:** `vinuni_academic` / `vinuni_ctsv` qua `src/tools/db.py` (ủy quyền `src/tools/schemaDB_Excuted_.py`; key kỹ thuật `academic` / `ctsv_booking`). Cùng hai URI `DATABASE_URL` / `CTSV_DATABASE_URL` như probe `/health` và checkpoint (có thể trùng server, khác database).
 - **Tài liệu API chi tiết:** [`docs/langgraph-http-api.md`](docs/langgraph-http-api.md) và `GET /docs` khi server chạy.
 
 ---
@@ -339,8 +339,8 @@ cp .env.example .env
 | Biến | Tác dụng |
 |------|----------|
 | `GOOGLE_API_KEY` | Bật **agent** ReAct + Gemini + tools; không có → **stub** demo |
-| `DATABASE_URL` | Postgres cho **checkpoint** thread + `checkpoint_backend=postgres` trong `/meta` |
-| `CTSV_DATABASE_URL` | Chỉ dùng cho **probe** trong `/health` (CTSV) |
+| `DATABASE_URL` | Postgres cho **checkpoint** thread + truy vấn agent DB học vụ (`academic`) |
+| `CTSV_DATABASE_URL` | Truy vấn agent CTSV (`ctsv_booking`) + **probe** trong `/health` |
 | `GEMINI_MODEL` | Mặc định `gemini-2.5-flash` |
 | `SMTP_*` | Gửi email thật qua tool (khi agent gọi) — xem `src/config.py` |
 
@@ -384,7 +384,7 @@ Nếu vẫn muốn gọi trực tiếp module package: `PYTHONPATH=src uv run uv
 
 URI dạng `postgresql://user:pass@host:5432/dbname`. Lần đầu LangGraph tạo bảng checkpoint qua `PostgresSaver.setup()` trong lifespan.
 
-Script SQL mẫu cho dữ liệu nghiệp vụ (tuỳ nhóm): thư mục `database/` (`setup_academic.sql`, …) — **không** bắt buộc để chạy graph mock trong `src/tools/db.py`.
+Script SQL mẫu cho dữ liệu nghiệp vụ (tuỳ nhóm): thư mục `database/` (`setup_academic.sql`, …). Cần schema khớp nếu agent gọi `execute_sql_tool`; không bắt buộc chỉ để chạy graph **stub** (không LLM).
 
 ---
 
