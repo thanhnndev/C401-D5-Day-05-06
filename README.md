@@ -370,11 +370,12 @@ uv run python main.py
 ### Chạy HTTP API (cho frontend)
 
 ```bash
-export PYTHONPATH=src
-uv run uvicorn api.app:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-`api.app` nằm trong `src/api/`; root repo cũng được thêm vào `sys.path` trong app để import `graph`, nhưng **`src` vẫn cần** cho `config` và package `api`.
+File **`server.py`** ở gốc repo tự thêm `src/` (và gốc repo) vào `sys.path` trước khi import `api` — **không cần** `export PYTHONPATH=src` khi dùng lệnh này.
+
+Nếu vẫn muốn gọi trực tiếp module package: `PYTHONPATH=src uv run uvicorn api.app:app ...`
 
 - Swagger: **http://127.0.0.1:8000/docs**
 - Gợi ý flow: `GET /meta` → `POST /chat` → `GET /threads/{id}/history` (mô tả trong [`docs/langgraph-http-api.md`](docs/langgraph-http-api.md)).

@@ -9,12 +9,13 @@ Contract chi tiết cũng có trong OpenAPI: `GET /docs` (Swagger), `GET /openap
 - **Chat:** gửi một lượt tin nhắn người dùng, chạy graph một vòng, nhận state đầu ra và giữ nhất quán theo **thread** (phiên hội thoại).
 - **Lịch sử:** đọc các checkpoint của một thread để hiển thị timeline / debug (dữ liệu đến từ LangGraph `get_state_history`).
 - **Meta:** biết graph đang chạy **agent** (LLM + tools) hay **stub** (demo không LLM) và loại checkpoint — để frontend parse `state` đúng.
+- **HIL (email / hành động rủi ro):** xem mục **Human-in-the-loop (HIL)** trong tài liệu này — pattern khuyến nghị (LangGraph `interrupt` + Postgres) và cách frontend triển khai tạm thời với `/chat` hiện tại.
 
 ---
 
 ## Địa chỉ cơ sở và OpenAPI
 
-- **Base URL:** do môi trường triển khai quy định (ví dụ `http://localhost:8000` khi chạy `uvicorn` cục bộ). Mọi đường dẫn dưới đây là **relative** từ base URL.
+- **Base URL:** do môi trường triển khai quy định (ví dụ `http://localhost:8000` khi chạy `uvicorn server:app` từ gốc repo — xem `server.py`). Mọi đường dẫn dưới đây là **relative** từ base URL.
 - **OpenAPI / Swagger UI:** `GET /docs` — đối chiếu schema và thử request trong trình duyệt (khi server bật tài liệu tương tác).
 - **OpenAPI JSON:** `GET /openapi.json` — sinh client types hoặc import Postman.
 
@@ -28,12 +29,66 @@ Contract chi tiết cũng có trong OpenAPI: `GET /docs` (Swagger), `GET /openap
 
 ---
 
+## Ghi chú frontend — stub vs agent (quan trọng)
+
+| `graph_mode` (`GET /meta` / `POST /chat`) | Ý nghĩa | UI chat nên hiểu thế nào |
+|-------------------------------------------|---------|---------------------------|
+| **`stub`** | Backend **không** load LLM (Gemini). Graph demo chỉ chạy hai bước cố định trên chuỗi `text`. | Phản hồi **không phải** AI: thường chỉ là **nối ký tự** (ví dụ gửi `"x"` → `state.text` kiểu `"xab"` — thêm `"a"` rồi `"b"`). **Đây là đúng thiết kế** khi thiếu key, không phải JSON mock hay bug API. |
+| **`agent`** | Có **`GOOGLE_API_KEY`** trên **process** uvicorn / worker. | `state.messages` có hội thoại thật (ReAct + tools). Đây mới là “tin nhắn agent”. |
+
+**Để bật agent thật:** cấu hình biến môi trường **`GOOGLE_API_KEY`** trên server (file `.env` cùng thư mục làm việc khi chạy app, hoặc biến trong PaaS), **restart** tiến trình FastAPI để nạp lại env. Kiểm tra: `GET /meta` → `graph_mode` = `"agent"`, `agent_enabled` = `true`.
+
+Nếu vẫn thấy `stub` sau khi set key: xác nhận key không rỗng/không bị override, và server đọc đúng file env (xem `src/config.py` load `.env` từ gốc repo).
+
+---
+
 ## Luồng tích hợp gợi ý (frontend)
 
 1. **`GET /meta`** — Lấy `graph_mode`, `agent_enabled`, `checkpoint_backend` trước khi render UI chat (stub vs agent khác cách hiển thị `state`).
 2. **`GET /health`** (tuỳ chọn) — Probe DB cho banner “backend data”.
 3. **`POST /chat`** — Gửi tin nhắn; nhận `thread_id`, `graph_mode`, `state`.
 4. **`GET /threads/{thread_id}/history`** — Lịch sử checkpoint (time-travel / debug).
+
+---
+
+## Human-in-the-loop (HIL) — khuyến nghị production
+
+### Một luồng tối ưu (best practice LangGraph OSS)
+
+Cho tác vụ **có rủi ro** (gửi email hàng loạt, giao dịch, xóa dữ liệu), **không** nên chỉ dựa vào prompt yêu cầu LLM “đừng gửi”. Pattern được framework hướng tới:
+
+| Thành phần | Vai trò |
+|------------|---------|
+| **`interrupt()`** (trong node graph, trước khi gọi tool nguy hiểm) | Tạm dừng thực thi; đưa ra **yêu cầu phê duyệt** (ví dụ tên tool + `args`, mô tả/markdown preview). Human có thể **bỏ qua / trả lời / chỉnh sửa / chấp nhận** tùy cấu hình. |
+| **Checkpointer bền** (khuyến nghị **Postgres** trong production) | **Durable execution**: thread không mất khi restart process; có thể **resume** đúng chỗ dừng. |
+| **`configurable.thread_id`** (bắt buộc) | Xác định phiên; mọi lượt chat / resume dùng **cùng** `thread_id` cho một cuộc hội thoại chờ phê duyệt. |
+| **`checkpoint_id`** (tùy chọn, khi cần) | Resume từ một checkpoint cụ thể (time travel / nhánh phê duyệt). |
+
+Tài liệu framework nhấn mạnh: **human oversight** tại điểm dừng, **sửa state / quyết định**, rồi **tiếp tục** — phù hợp SPEC StudentOps (preview danh sách + nội dung + checkbox trước khi gửi).
+
+**Vì sao không chọn “chỉ thêm endpoint REST `/email/confirm`” làm giải pháp duy nhất?** Endpoint tách vẫn hữu ích cho UI, nhưng **nguồn sự thật** nên là **graph + checkpoint**: tránh lệch giữa “đã draft ở đâu” và “confirm gửi ở đâu”, dễ audit và replay. Có thể **kết hợp**: interrupt bên trong graph + API mỏng map `resume` → `invoke`/`Command` với cùng `thread_id`.
+
+### Trạng thái API **repo hiện tại**
+
+- **`POST /chat`** chạy một lượt `invoke`; **chưa** trả về trạng thái **`interrupt`** / `__interrupt__` trong envelope JSON.
+- HIL gửi mail (UC2) đang **hỗ trợ ở mức prompt** (agent được hướng dẫn không gọi `send_email` / `bulk_email_sender_tool` trừ khi user xác nhận trong chat) — **không thay thế** kiểm soát server-side như bảng trên.
+
+Frontend vẫn nên **thiết kế UI HIL đầy đủ** (dưới) để khi backend bật `interrupt` + resume, chỉ cần nối vào cùng `thread_id` và payload resume (sẽ được bổ sung vào contract sau).
+
+### Hướng dẫn triển khai Frontend (làm ngay — tương thích SPEC)
+
+Cho luồng **soạn email / gửi hàng loạt**, UI nên tách rõ **ba pha** (dù HTTP hiện chỉ có `/chat`):
+
+1. **Pha draft** — User mô tả yêu cầu; chat trả về trong `state.messages` (AI có thể gọi tool **draft** / mô tả danh sách). Hiển thị preview: sample người nhận, subject/body (merge field).
+2. **Pha HIL (bắt buộc)** — Màn hình riêng: danh sách người nhận (hoặc số lượng), nội dung đã render, **checkbox** kiểu *“Đã xem kỹ danh sách và nội dung — không thể thu hồi”*, nút **Gửi** disabled cho đến khi tick.
+3. **Pha xác nhận gửi** — Chỉ khi user tick + bấm gửi: gọi **`POST /chat`** lại với **cùng `thread_id`**, `message` là **câu xác nhận không mơ hồ** (product quy ước sẵn, ví dụ tiếng Việt có chứa cụm *“Xác nhận gửi email cho danh sách đã xem”* + có thể nhắc số người). Điều này **giảm** rủi ro gửi nhầm so với một câu chat thường; **không** bằng `interrupt()` nhưng khớp UX SPEC cho đến khi backend nâng cấp.
+
+**Lưu ý:** Giữ **`thread_id`** cố định suốt draft → HIL → confirm để checkpoint (khi dùng Postgres) phản ánh đúng một phiên.
+
+### Roadmap contract (khi backend tích hợp LangGraph interrupt)
+
+- Response có thể bổ sung trường kiểu **`interrupted: true`** và payload phê duyệt (action + args + mô tả).
+- Bước tiếp theo: cùng `thread_id`, body **`resume`** / **`Command`** (tuỳ bản API) — chi tiết sẽ vào OpenAPI khi implement.
 
 ---
 

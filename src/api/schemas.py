@@ -170,10 +170,16 @@ class GraphMetaResponse(BaseModel):
     """Metadata để frontend biết cách bind UI (agent vs stub) mà không cần gọi chat."""
 
     graph_mode: GraphMode = Field(
-        description='Trùng ý nghĩa với `graph_mode` trong `ChatResponse`.',
+        description=(
+            'Giống `ChatResponse.graph_mode`. `stub` = không LLM (demo nối ký tự trên `text`); '
+            '`agent` = Gemini ReAct — cần `GOOGLE_API_KEY` trên server.'
+        ),
     )
     agent_enabled: bool = Field(
-        description='True khi `GOOGLE_API_KEY` được set (ReAct + tools).',
+        description=(
+            'True khi `GOOGLE_API_KEY` có trên process. False → chat không có tin nhắn AI thật; '
+            'xem docs `langgraph-http-api.md` mục stub vs agent.'
+        ),
     )
     checkpoint_backend: Literal['postgres', 'memory'] = Field(
         description='postgres nếu DATABASE_URL có và kết nối OK tại startup; ngược lại memory.',

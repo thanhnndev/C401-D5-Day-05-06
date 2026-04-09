@@ -1,8 +1,10 @@
 """FastAPI application: LangGraph chat, thread history, OpenAPI for frontend.
 
-Run (repo root, venv active)::
+Run from repo root (không cần ``PYTHONPATH``)::
 
-    uvicorn api.app:app --reload --host 0.0.0.0 --port 8000
+    uvicorn server:app --reload --host 0.0.0.0 --port 8000
+
+Hoặc: ``PYTHONPATH=src uvicorn api.app:app ...`` — xem ``server.py`` ở gốc repo.
 
 - ``DATABASE_URL`` → ``PostgresSaver``; else ``MemorySaver``.
 - See ``docs/langgraph-http-api.md`` and ``GET /meta`` for contract (``graph_mode``, ``state``).
