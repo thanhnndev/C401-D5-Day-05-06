@@ -1,5 +1,3 @@
-import time
-
 from src.telemetry.logger import logger
 
 
@@ -27,8 +25,8 @@ class PerformanceTracker:
         metric = {
             'provider': provider,
             'model': model,
-            'prompt_tokens': usage.get('prompt_tokens', 0),
-            'completion_tokens': usage.get('completion_tokens', 0),
+            'input_tokens': usage.get('input_tokens', 0),
+            'output_tokens': usage.get('output_tokens', 0),
             'total_tokens': usage.get('total_tokens', 0),
             'latency_ms': latency_ms,
             'cost_estimate': self._calculate_cost(
