@@ -22,6 +22,7 @@ dependencies = [
     "langchain-openai",
     "langchain-core",
     "tabulate>=0.10.0",
+    "langchain>=1.2.15",
 ]
 
 [tool.ruff]

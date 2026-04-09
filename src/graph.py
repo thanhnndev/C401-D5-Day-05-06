@@ -209,16 +209,27 @@ def final_analysis(state: AgentState) -> dict[str, Any]:
         }
 
     df = pd.DataFrame(data)
-    df_sample = df.head(5).to_markdown()
-    prompt = f"""Bạn là một chuyên gia phân tích dữ liệu. Hãy tóm tắt kết quả sau đây bằng tiếng Việt một cách dễ hiểu cho người dùng không rành kỹ thuật.
+    df_sample = df.to_markdown()  # Send more data if possible, or head(20)
+    
+    prompt = f"""Bạn là một chuyên gia phân tích dữ liệu cao cấp. Hãy thực hiện phân tích sâu kết quả truy vấn dưới đây bằng tiếng Việt.
 
-    Yêu cầu của người dùng: {query}
-    Dữ liệu (5 dòng đầu):
-    {df_sample}
+Yêu cầu người dùng: {query}
 
-    Tổng số dòng: {len(df)}
+Dữ liệu truy vấn được:
+{df_sample}
 
-    Hãy cung cấp những hiểu biết sâu sắc và hành động có thể thực hiện được."""
+Tổng số bản ghi: {len(df)}
+
+Nhiệm vụ của bạn:
+1. Tổng quan (Overview): Tóm tắt ngắn gọn các xu hướng hoặc đặc điểm chính của bộ dữ liệu.
+2. Phát hiện bất thường (Anomaly Detection): Tập trung tìm kiếm các điểm dữ liệu dị biệt hoặc các mẫu hình bất thường (ví dụ: điểm số thấp đột biến, các giá trị quá cao/thấp so với trung bình, các lỗi logic trong dữ liệu).
+3. Thông tin chi tiết (Actionable Insights): Đưa ra các nhận xét có giá trị và đề xuất hành động cụ thể dựa trên dữ liệu.
+
+Lưu ý:
+- Nếu dữ liệu liên quan đến điểm số học sinh, hãy đặc biệt chú ý đến các trường hợp điểm kém bất thường để cảnh báo.
+- Ngôn ngữ: Tiếng Việt, chuyên nghiệp, súc tích, dễ hiểu.
+- Trình bày: Sử dụng Markdown (bullet points, bold text) để làm nổi bật thông tin quan trọng.
+"""
 
     response = llm.invoke([
         SystemMessage(content='You are a helpful data analyst.'),
