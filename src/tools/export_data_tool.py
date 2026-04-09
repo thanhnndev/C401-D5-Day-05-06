@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import pandas as pd
 from langchain_core.tools import tool
@@ -10,12 +10,11 @@ from src.telemetry.logger import logger
 
 @tool
 def export_data(
-    data: Union[List[Dict[str, Any]], pd.DataFrame],
+    data: list[dict[str, Any]] | pd.DataFrame,
     format: str = 'csv',
     filename_prefix: str = 'export',
 ) -> str:
-    """
-    Converts query results into CSV or Excel format.
+    """Exports the provided data to a CSV or Excel file.
 
     Args:
         data: The data to be exported; can be a pandas DataFrame or a list of dictionaries (rows).
