@@ -5,6 +5,7 @@ Backend FastAPI + LangGraph cho prototype **StudentOps** (VinUni / VinSchool).
 | Artefact | Vị trí |
 |----------|--------|
 | Báo cáo nhóm | [`group_report/`](group_report/) |
+| Feedback nhóm (demo round) | [`group_report/feedback-report.md`](group_report/feedback-report.md) |
 | SPEC nhóm (draft) | [`group_report/spec-draft-vinuni-vinschool.md`](group_report/spec-draft-vinuni-vinschool.md) |
 | SPEC nhóm (final) | [`group_report/spec-final-vinuni-vinschool.md`](group_report/spec-final-vinuni-vinschool.md) |
 | Báo cáo cá nhân | [`individual_reports/`](individual_reports/) |
