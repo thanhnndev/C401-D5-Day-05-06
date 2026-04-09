@@ -15,15 +15,15 @@ def export_data(
     filename_prefix: str = 'export',
 ) -> str:
     """
-    Chuyển đổi kết quả truy vấn sang định dạng CSV hoặc Excel.
+    Converts query results into CSV or Excel format.
 
     Args:
-        data: Dữ liệu cần xuất, có thể là DataFrame hoặc danh sách các dictionary (rows).
-        format: Định dạng mong muốn ('csv' hoặc 'excel'). Mặc định là 'csv'.
-        filename_prefix: Tiền tố tên file.
+        data: The data to be exported; can be a pandas DataFrame or a list of dictionaries (rows).
+        format: The desired output format ('csv' or 'excel'). Defaults to 'csv'.
+        filename_prefix: The prefix for the generated filename.
 
     Returns:
-        str: Thông báo thành công kèm đường dẫn hoặc thông báo lỗi.
+        str: A success message containing the file path, or an error message.
     """
     if isinstance(data, list):
         if not data:
