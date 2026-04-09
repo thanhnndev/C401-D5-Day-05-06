@@ -51,4 +51,4 @@ Với question phức tạp yêu cầu truy vấn nhiều bước (>10 bước) 
 ---
 
 ## Tổng kết
-Nhìn chung các nhóm đều xác định được bài toán thực tế và có hướng triển khai rõ ràng. Các giải pháp đã bắt đầu chú trọng hơn đến trải nghiệm người dùng cuối thay vì chỉ tập trung vào công nghệ thuần túy. Tuy nhiên, một số nhóm cần cân nhắc về việc bảo mật và trải nghiệm người dùng khi hệ thống scale lớn.`
+Nhìn chung các nhóm đều xác định được bài toán thực tế và có hướng triển khai rõ ràng. Các giải pháp đã bắt đầu chú trọng hơn đến trải nghiệm người dùng cuối thay vì chỉ tập trung vào công nghệ thuần túy. Tuy nhiên, một số nhóm cần cân nhắc về việc bảo mật và trải nghiệm người dùng khi hệ thống scale lớn.
