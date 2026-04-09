@@ -100,10 +100,8 @@ def execute_query_tool(db_type: str, query: str) -> str:
                 cur.execute(query)
                 if cur.description is None:
                     return "Query executed successfully, but returned no data."
-                
                 columns = [desc[0] for desc in cur.description]
                 results = cur.fetchall()
-                
                 if not results:
                     return f"Kết quả từ {db_type}: 0 dòng."
                 
