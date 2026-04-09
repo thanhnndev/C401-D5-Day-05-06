@@ -1,20 +1,22 @@
 from pathlib import Path
 from typing import Any, Dict, List
+
 from langchain_core.tools import tool
 
+
 def load_template(filename: str) -> str:
-    """Load an email template from src/templates/."""
-    # Find the root project directory (assuming src/tools is where this file is)
-    template_path = Path(__file__).parent.parent / "templates" / filename
+    """Load an email template from ``src/templates/`` (next to the ``tools`` package)."""
+    template_path = Path(__file__).resolve().parent.parent / 'templates' / filename
     if not template_path.exists():
-        raise FileNotFoundError(f"Template not found at {template_path}")
-    return template_path.read_text(encoding="utf-8")
+        raise FileNotFoundError(f'Template not found at {template_path}')
+    return template_path.read_text(encoding='utf-8')
+
 
 @tool
 def email_draft_tool(
-    students: List[Dict[str, Any]], 
-    email_template: str, 
-    subject_template: str = 'Notification from VinUni - {{mssv}}'
+    students: List[Dict[str, Any]],
+    email_template: str,
+    subject_template: str = 'Notification from VinUni - {{mssv}}',
 ) -> List[Dict[str, str]]:
     """
     Draft personalized emails for a list of students with flexible content (Tuition, Academic Results, Program info).
@@ -40,14 +42,14 @@ def email_draft_tool(
 
         # Clone student data to avoid side effects
         data = student.copy()
-        
+
         # Calculate outstanding tuition if info is available
         if 'amount_due_vnd' in data and 'amount_paid_vnd' in data:
             data['outstanding_tuition_vnd'] = data['amount_due_vnd'] - data['amount_paid_vnd']
 
         for key, value in data.items():
             placeholder = f'{{{{{key}}}}}'
-            
+
             # Format display data based on field type/name
             display_value = value
             if value is None:
@@ -59,15 +61,15 @@ def email_draft_tool(
                 elif 'gpa' in key.lower():
                     # GPA format: 3.80
                     display_value = f'{value:.2f}'
-            
+
             # Replace placeholders in both body and subject
             body = body.replace(placeholder, str(display_value))
             subject = subject.replace(placeholder, str(display_value))
-        
+
         drafts.append({
             'mssv': str(data.get('mssv', 'N/A')),
             'email': str(data.get('email', 'N/A')),
             'subject': subject,
-            'body': body
+            'body': body,
         })
     return drafts

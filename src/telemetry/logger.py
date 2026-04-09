@@ -5,10 +5,7 @@ from datetime import UTC, datetime
 
 
 class IndustryLogger:
-    """Structured logger that simulates industry practices.
-
-    Logs to both console and a file in JSON format.
-    """
+    """JSON lines to console and a daily file under ``logs/``."""
 
     def __init__(self, name: str = 'AI-Lab-Agent', log_dir: str = 'logs') -> None:
         self.logger = logging.getLogger(name)
@@ -28,7 +25,7 @@ class IndustryLogger:
         self.logger.addHandler(console_handler)
 
     def log_event(self, event_type: str, data: dict[str, object]) -> None:
-        """Logs an event with a timestamp and type."""
+        """Emit one structured event."""
         payload = {
             'timestamp': datetime.now(UTC).isoformat(),
             'event': event_type,

@@ -1,4 +1,4 @@
-from src.telemetry.logger import logger
+from telemetry.logger import logger
 
 
 class PerformanceTracker:
@@ -45,4 +45,10 @@ class PerformanceTracker:
         )
 
 
-# Global tracker instance
+# Placeholder per-1M-token USD rates; override when pricing changes.
+_GEMINI_FLASH_COSTS: dict[str, tuple[float, float]] = {
+    'gemini-2.5-flash': (0.075, 0.30),
+    'gemini-2.0-flash': (0.10, 0.40),
+}
+
+llm_performance_tracker = PerformanceTracker(_GEMINI_FLASH_COSTS)
